@@ -24,8 +24,17 @@
             minY: number;
             maxY: number;
         },
-        transform: SVGTransform | null
+        transform: SVGTransform | null;
+        assetDatas: {
+            base: any;
+            names: any;
+        };
+        progress: any
     }
+    document.addEventListener('AlchemixDatasetLoaded', () => {
+        document.querySelector('.curtain').style.setProperty('display','none');
+    });
+    if(!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
     const playground: Playground = {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
@@ -72,8 +81,14 @@
             minY: 0,
             maxY: 0,
         },
-        transform: null
+        transform: null,
+        assetDatas: {
+            base: await (await fetch('/dataset/base')).json(),
+            names: await (await fetch('/dataset/name')).json()
+        },
+        progress: JSON.parse(localStorage.getItem('AlchemixCurrentUserProgress'))
     };
+    document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
         if((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');

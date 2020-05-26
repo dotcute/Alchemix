@@ -9,7 +9,7 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/dataset/:datasetname', (req: Request, res: Response) => {
   if(['base','name'].indexOf(<string> req.params.datasetname) == -1) return res.status(404).send('Not Found');
-  res.send(path.join(__dirname, 'assets', 'data', ['base.json','names.json'][['base','name'].indexOf(<string> req.params.datasetname)]));
+  res.sendFile(path.join(__dirname, 'assets', 'data', ['base.json','names.json'][['base','name'].indexOf(<string> req.params.datasetname)]));
 });
 
 app.listen(8080);
