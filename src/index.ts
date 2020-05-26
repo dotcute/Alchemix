@@ -112,14 +112,6 @@
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
     });
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent) => {
-        const coord: Position = playground.getMousePosition(e);
-        coord.x -= playground.offset.x;
-        coord.y -= playground.offset.y;
-        if(coord.x < playground.confins.minX) coord.x = playground.confins.minX;
-        if(coord.x > playground.confins.maxX) coord.x = playground.confins.maxX;
-        if(coord.y < playground.confins.minY) coord.y = playground.confins.minY;
-        if(coord.y > playground.confins.maxY) coord.y = playground.confins.maxY;
-        if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
         playground.selectedElement = null;
     });
     playground.init();
