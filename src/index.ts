@@ -75,6 +75,7 @@
         transform: null
     };
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
+        if((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
         if(!target) return;
         if(!target.classList.contains('draggable')) return;
