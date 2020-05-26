@@ -24,8 +24,17 @@
             minY: number;
             maxY: number;
         },
-        transform: SVGTransform | null
+        transform: SVGTransform | null;
+        assetDatas: {
+            base: any;
+            names: any;
+        };
+        progress: any
     }
+    document.addEventListener('AlchemixDatasetLoaded', () => {
+        document.querySelector('.curtain').style.setProperty('display','none');
+    });
+    if(!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
     const playground: Playground = {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
@@ -72,9 +81,16 @@
             minY: 0,
             maxY: 0,
         },
-        transform: null
+        transform: null,
+        assetDatas: {
+            base: await (await fetch('/dataset/base')).json(),
+            names: await (await fetch('/dataset/name')).json()
+        },
+        progress: JSON.parse(localStorage.getItem('AlchemixCurrentUserProgress'))
     };
+    document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
+        if((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
         if(!target) return;
         if(!target.classList.contains('draggable')) return;
@@ -111,14 +127,6 @@
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
     });
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent) => {
-        const coord: Position = playground.getMousePosition(e);
-        coord.x -= playground.offset.x;
-        coord.y -= playground.offset.y;
-        if(coord.x < playground.confins.minX) coord.x = playground.confins.minX;
-        if(coord.x > playground.confins.maxX) coord.x = playground.confins.maxX;
-        if(coord.y < playground.confins.minY) coord.y = playground.confins.minY;
-        if(coord.y > playground.confins.maxY) coord.y = playground.confins.maxY;
-        if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
         playground.selectedElement = null;
     });
     playground.init();
