@@ -1,32 +1,3 @@
-Skip to content
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@Pneuma714 
-StudentJSers
-/
-Alchemix
-0
-5
-0
- Code
- Issues 0
- Pull requests 0 Actions
- Projects 0
- Wiki
- Security 0
- Insights
- Settings
-Alchemix/src/index.ts /
-@muno9748 muno9748 Merge branch 'master' of https://github.com/StudentJSers/Alchemix
-fd9b51d 2 hours ago
-@muno9748@Pneuma714
-134 lines (134 sloc)  6.21 KB
-  
 (async () => {
     enum playgroundEventType {
         DRAGSTART,
@@ -161,15 +132,3 @@ fd9b51d 2 hours ago
     });
     playground.init();
 })();
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
