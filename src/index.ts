@@ -41,17 +41,21 @@ let playground = (async () => {
         progress: any;
         createItem: Function;
     }
+
     document.addEventListener('AlchemixDatasetLoaded', () => {
         if(!document.querySelector('.curtain')) return;
         (<HTMLHtmlElement> document.querySelector('.curtain')).style.setProperty('display','none');
     });
+
     if (!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
+
     const GUID: Function = (): string => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16).toUpperCase();
         });
     };
+
     const postData = (url: string, data: any, type: 'json' | 'text') => {
         return fetch(url, {
             method: 'POST',
@@ -67,9 +71,11 @@ let playground = (async () => {
         })
         .then(response => response[type]());
     }
+
     const getData = (url: string, type: 'json' | 'text') => {
         return fetch(url).then(res => res[type]());
     }
+
     const playground: Playground = {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
@@ -166,7 +172,9 @@ let playground = (async () => {
             }
         }
     };
+
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
+
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
         if ((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
@@ -196,6 +204,7 @@ let playground = (async () => {
             maxY: (playground.el as Element).getBoundingClientRect().height - bbox.y - bbox.height,
         };
     });
+
     playground.addEventListener(playgroundEventType.DRAG, (e: MouseEvent) => {
         if(!playground.selectedElement) return;
         e.preventDefault();
@@ -250,10 +259,12 @@ let playground = (async () => {
         });
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
     });
+
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent) => {
         (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
         playground.selectedElement = null;
     });
+    
     playground.init();
     return playground;
 })();
