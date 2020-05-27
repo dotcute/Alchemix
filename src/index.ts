@@ -35,7 +35,7 @@
         if(!document.querySelector('.curtain')) return;
         (<HTMLHtmlElement> document.querySelector('.curtain')).style.setProperty('display','none');
     });
-    if(!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
+    if (!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
     const playground: Playground = {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
@@ -91,17 +91,17 @@
     };
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
-        if((e.target as Element).tagName.toLowerCase() == 'svg') return;
+        if ((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
-        if(!target) return;
-        if(!target.classList.contains('draggable')) return;
+        if (!target) return;
+        if (!target.classList.contains('draggable')) return;
         playground.selectedElement = <Node> target;
         let transforms = (playground.selectedElement as SVGGraphicsElement).transform.baseVal;
         if (transforms.numberOfItems === 0 ||
             transforms.getItem(0).type !== SVGTransform.SVG_TRANSFORM_TRANSLATE) {
-          const translate = (playground.el as SVGSVGElement).createSVGTransform();
-          translate.setTranslate(0, 0);
-          (playground.selectedElement as SVGGraphicsElement).transform.baseVal.insertItemBefore(translate, 0);
+            const translate = (playground.el as SVGSVGElement).createSVGTransform();
+            translate.setTranslate(0, 0);
+            (playground.selectedElement as SVGGraphicsElement).transform.baseVal.insertItemBefore(translate, 0);
         }
         playground.transform = transforms.getItem(0);
         playground.offset = playground.getMousePosition(e);

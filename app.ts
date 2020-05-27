@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import path from 'path';
 const app: Application = express();
 app.use('/src', express.static(path.join(__dirname, 'src')));
+app.use('/assets/images', express.static(path.join(__dirname, 'assets/images')))
 
 app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'src', 'index.html'));
