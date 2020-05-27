@@ -32,7 +32,8 @@
         progress: any
     }
     document.addEventListener('AlchemixDatasetLoaded', () => {
-        document.querySelector('.curtain').style.setProperty('display','none');
+        if(!document.querySelector('.curtain')) return;
+        (<HTMLHtmlElement> document.querySelector('.curtain')).style.setProperty('display','none');
     });
     if(!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
     const playground: Playground = {
@@ -86,7 +87,7 @@
             base: await (await fetch('/dataset/base')).json(),
             names: await (await fetch('/dataset/name')).json()
         },
-        progress: JSON.parse(localStorage.getItem('AlchemixCurrentUserProgress'))
+        progress: JSON.parse(<string> localStorage.getItem('AlchemixCurrentUserProgress'))
     };
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
