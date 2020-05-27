@@ -1,4 +1,4 @@
-(async () => {
+let playground = (async () => {
     enum playgroundEventType {
         DRAGSTART,
         DRAG,
@@ -7,6 +7,12 @@
     interface Position {
         x: number;
         y: number;
+    }
+    interface Item {
+        X: number;
+        Y: number;
+        id: string;
+        type: string;
     }
     interface Playground {
         el: Node;
@@ -28,14 +34,42 @@
         assetDatas: {
             base: any;
             names: any;
+            assets: any;
+            baseAsset: any;
         };
-        progress: any
+        itemData: Map<string, Item>;
+        progress: any;
+        createItem: Function;
     }
     document.addEventListener('AlchemixDatasetLoaded', () => {
         if(!document.querySelector('.curtain')) return;
         (<HTMLHtmlElement> document.querySelector('.curtain')).style.setProperty('display','none');
     });
     if (!localStorage.getItem('AlchemixCurrentUserProgress')) localStorage.setItem('AlchemixCurrentUserProgress', JSON.stringify({}));
+    const GUID: Function = (): string => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16).toUpperCase();
+        });
+    };
+    const postData = (url: string, data: any, type: 'json' | 'text') => {
+        return fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            redirect: 'follow',
+            referrer: 'no-referrer',
+            body: JSON.stringify(data),
+        })
+        .then(response => response[type]());
+    }
+    const getData = (url: string, type: 'json' | 'text') => {
+        return fetch(url).then(res => res[type]());
+    }
     const playground: Playground = {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
@@ -84,10 +118,53 @@
         },
         transform: null,
         assetDatas: {
-            base: await (await fetch('/dataset/base')).json(),
-            names: await (await fetch('/dataset/name')).json()
+            base: await getData('/datasetAPI/defaultDataset/base', 'json'),
+            names: await getData('/datasetAPI/defaultDataset/name', 'json'),
+            baseAsset: await getData('/datasetAPI/dataset/RDc4RjRCMEItNjQyQi00NENFLUEyRTctN0E0MjUwRThFNUI3.MDAxOTlDMjEwMjREOEMwMA%3D%3D', 'json'),
+            assets: {}
         },
-        progress: JSON.parse(<string> localStorage.getItem('AlchemixCurrentUserProgress'))
+        itemData: new Map<string, Item>(),
+        progress: JSON.parse(<string> localStorage.getItem('AlchemixCurrentUserProgress')),
+        createItem: (type: string, x?: number, y?: number) => {
+            if(!playground.assetDatas.baseAsset.datas.map((l: any) => l.id).includes(type)) throw new Error();
+            if(x != undefined && y != undefined) {
+                const gnode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                gnode.classList.add('item');
+                gnode.classList.add('draggable');
+                let id = GUID();
+                gnode.setAttributeNS(null, 'id', `item_${id}`);
+                playground.itemData.set(id, {
+                    X: x,
+                    Y: y,
+                    type: type,
+                    id: id
+                });
+                const snode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                snode.setAttributeNS(null, 'href', playground.assetDatas.baseAsset.datas.find((l: any) => l.id == type).path);
+                snode.setAttributeNS(null, 'width', '100px');
+                snode.setAttributeNS(null, 'height', '100px');
+                gnode.appendChild(snode);
+                playground.el.appendChild(gnode);
+            } else {
+                const gnode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                gnode.classList.add('item');
+                gnode.classList.add('draggable');
+                let id = GUID();
+                gnode.setAttributeNS(null, 'id', `item_${id}`);
+                playground.itemData.set(id, {
+                    X: 0,
+                    Y: 0,
+                    type: type,
+                    id: id
+                });
+                const snode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                snode.setAttributeNS(null, 'href', playground.assetDatas.baseAsset.datas.find((l: any) => l.id == type).path);
+                snode.setAttributeNS(null, 'width', '100px');
+                snode.setAttributeNS(null, 'height', '100px');
+                gnode.appendChild(snode);
+                playground.el.appendChild(gnode);
+            }
+        }
     };
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
     playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
@@ -96,6 +173,10 @@
         if (!target) return;
         if (!target.classList.contains('draggable')) return;
         playground.selectedElement = <Node> target;
+        const temp: Node = playground.selectedElement.cloneNode(true);
+        playground.el.appendChild(temp);
+        (<Element> playground.selectedElement).remove();
+        playground.selectedElement = temp;
         let transforms = (playground.selectedElement as SVGGraphicsElement).transform.baseVal;
         if (transforms.numberOfItems === 0 ||
             transforms.getItem(0).type !== SVGTransform.SVG_TRANSFORM_TRANSLATE) {
@@ -125,10 +206,54 @@
         if(coord.x > playground.confins.maxX) coord.x = playground.confins.maxX;
         if(coord.y < playground.confins.minY) coord.y = playground.confins.minY;
         if(coord.y > playground.confins.maxY) coord.y = playground.confins.maxY;
+        const elemId: string = <string> (<Element> playground.selectedElement).getAttributeNS(null, 'id')?.replace('item_', '');
+        const item_: Item = <Item> playground.itemData.get(elemId);
+        item_.X = coord.x;
+        item_.Y = coord.y;
+        let c: number = 0;
+        playground.itemData.forEach((item: Item) => {
+            if(c != 0) return;
+            if(item.id == item_.id) {
+                return;
+            }
+            if(!(item.X < item_.X + 70 && item.X > item_.X - 70) || !(item.Y < item_.Y + 70 && item.Y > item_.Y - 70)) {
+                (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
+                return;
+            }
+            if(document.querySelector('.itemCoalescenceHighlight')) {
+                return;
+            }
+            c++;
+            const fnode = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+            fnode.setAttributeNS(null, 'class', 'itemCoalescenceHighlight');
+            fnode.setAttributeNS(null, 'width', '120px');
+            fnode.setAttributeNS(null, 'height', '120px');
+            fnode.setAttributeNS(null, 'x', (item.X - 10).toString());
+            fnode.setAttributeNS(null, 'y', (item.Y - 10).toString());
+            const dnode = document.createElement('div');
+            dnode.style.setProperty('width', '120px');
+            dnode.style.setProperty('height', '120px');
+            dnode.style.setProperty('background', 'black');
+            dnode.style.setProperty('border-radius', '100%');
+            dnode.style.setProperty('transform-origin', 'center');
+            dnode.style.setProperty('opacity', '0.4');
+            dnode.setAttribute('class', 'itemCoalescenceHighlightInnerDiv');
+            fnode.appendChild(dnode);
+            playground.el.insertBefore(fnode, playground.el.firstChild);
+            document.querySelector('.itemCoalescenceHighlightInnerDiv')?.animate([
+                { transform: 'scale(0)' }, 
+                { transform: 'scale(1)' }
+            ], { 
+                duration: 100,
+                iterations: 1
+            });
+        });
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
     });
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent) => {
+        (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
         playground.selectedElement = null;
     });
     playground.init();
+    return playground;
 })();
