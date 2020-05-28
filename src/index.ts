@@ -40,6 +40,7 @@ let playground = (async () => {
         itemData: Map<string, Item>;
         progress: any;
         createItem: Function;
+        createItemByViewName: Function;
         isCoalescenced: boolean;
         coalescencedItems: Array<string>;
     }
@@ -161,6 +162,7 @@ let playground = (async () => {
                 snode.setAttributeNS(null, 'height', '100px');
                 gnode.appendChild(snode);
                 playground.el.appendChild(gnode);
+                gnode.setAttributeNS(null, 'transform', `translate(${x} ${y})`);
             } else {
                 const gnode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 gnode.classList.add('item');
@@ -178,6 +180,49 @@ let playground = (async () => {
                 snode.setAttributeNS(null, 'width', '100px');
                 snode.setAttributeNS(null, 'height', '100px');
                 gnode.appendChild(snode);
+                gnode.setAttributeNS(null, 'transform', `translate(0 0)`);
+                playground.el.appendChild(gnode);
+            }
+        },
+        createItemByViewName(viewName: string, x?: number, y?: number) {
+            if(!playground.assetDatas.baseAsset.datas.map((l: any) => l.viewName).includes(viewName)) throw new Error();
+            if(x != undefined && y != undefined) {
+                const gnode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                gnode.classList.add('item');
+                gnode.classList.add('draggable');
+                let id = GUID();
+                gnode.setAttributeNS(null, 'id', `item_${id}`);
+                playground.itemData.set(id, {
+                    X: x,
+                    Y: y,
+                    type: playground.assetDatas.baseAsset.datas.find((l: any) => l.viewName == viewName).id,
+                    id: id
+                });
+                const snode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                snode.setAttributeNS(null, 'href', playground.assetDatas.baseAsset.datas.find((l: any) => l.viewName == viewName).path);
+                snode.setAttributeNS(null, 'width', '100px');
+                snode.setAttributeNS(null, 'height', '100px');
+                gnode.appendChild(snode);
+                gnode.setAttributeNS(null, 'transform', `translate(${x} ${y})`);
+                playground.el.appendChild(gnode);
+            } else {
+                const gnode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                gnode.classList.add('item');
+                gnode.classList.add('draggable');
+                let id = GUID();
+                gnode.setAttributeNS(null, 'id', `item_${id}`);
+                playground.itemData.set(id, {
+                    X: 0,
+                    Y: 0,
+                    type: playground.assetDatas.baseAsset.datas.find((l: any) => l.viewName == viewName).id,
+                    id: id
+                });
+                const snode: Element = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                snode.setAttributeNS(null, 'href', playground.assetDatas.baseAsset.datas.find((l: any) => l.viewName == viewName).path);
+                snode.setAttributeNS(null, 'width', '100px');
+                snode.setAttributeNS(null, 'height', '100px');
+                gnode.appendChild(snode);
+                gnode.setAttributeNS(null, 'transform', `translate(0 0)`);
                 playground.el.appendChild(gnode);
             }
         },
@@ -295,7 +340,7 @@ let playground = (async () => {
             if(!findedItemData) {
                 console.log(`Invalid Combination: ${i0d.viewName} + ${i1d.viewName}`); // 없는 조합을 만들었을 경우
             } else {
-                console.log(`New Item Unlocked: ${findedItemData.viewName}`); // 새로운 아이템을 만듬
+                console.log(`New Item Unlocked: ${i0d.viewName} + ${i1d.viewName} = ${findedItemData.viewName}`); // 새로운 아이템을 만듬
             }
             playground.coalescencedItems = [];
             playground.isCoalescenced = false;

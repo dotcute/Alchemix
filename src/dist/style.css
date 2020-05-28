@@ -1,0 +1,22 @@
+body {
+    margin: 0px;
+    overflow: hidden;
+}
+.curtain {
+    position: fixed;
+    width: 100vw;
+    height: 101vh;
+    top: -10px;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 4rem;
+    font-weight: 900;
+}
+#playground {
+    width: 100vw;
+    height: 100vh;
+    background: whitesmoke;
+}

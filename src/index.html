@@ -2,27 +2,14 @@
 <html>
   <head>
     <title>Alchemix - Play</title>
+    <link rel="stylesheet" href="/src/dist/style.css">
   </head>
   <body style="margin: 0px; overflow: hidden;">
-    <div class="curtain" style="
-      position: fixed;
-      width: 100vw;
-      height: 101vh;
-      top: -10px;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 4rem;
-      font-weight: 900;
-    ">
-      Loading...
-    </div>
+    <div class="curtain">Loading...</div>
     <h1>Alchemix</h1>
-    <svg id="playground" style="width: 100vh; height: 100vh;">
-    </svg>
-    <img id="icon" src="/src/icon.png">
+    <div class="container">
+      <svg id="playground"></svg>
+    </div>
     <script src="/src/index.ts" type="text/typescript"></script>
     <script src="https://rawgit.com/Microsoft/TypeScript/master/lib/typescriptServices.js"></script>
     <script src="/src/dist/parser.js"></script>
