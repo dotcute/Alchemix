@@ -13,28 +13,28 @@
 			],
 			"isBasic": false,
 			"pathType": "url",
-			"path": "/assets/images/bomb.png",
+			"path": "/assets/images/water.png",
 			"viewName": "water"
 		},
 		{
 			"id": "2",
 			"isBasic": true,
 			"pathType": "url",
-			"path": "/assets/images/bomb.png",
+			"path": "/assets/images/fire.png",
 			"viewName": "fire"
 		},
 		{
 			"id": "3",
 			"isBasic": true,
 			"pathType": "url",
-			"path": "/assets/images/bomb.png",
+			"path": "/assets/images/earth.png",
 			"viewName": "earth"
 		},
 		{
 			"id": "4",
 			"isBasic": true,
 			"pathType": "url",
-			"path": "/assets/images/bomb.png",
+			"path": "/assets/images/air.png",
 			"viewName": "air"
 		},
 		{

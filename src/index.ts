@@ -296,6 +296,11 @@ let playground = (async () => {
                 console.log(`Invalid Combination: ${i0d.viewName} + ${i1d.viewName}`); // 없는 조합을 만들었을 경우
             } else {
                 console.log(`New Item Unlocked: ${findedItemData.viewName}`); // 새로운 아이템을 만듬
+                // playground.itemData.delete(i0.id);
+                // (<Element> playground.el).querySeletor('item' + i0.id).remove();
+                // playground.itemData.delete(i1.id);
+                // (<Element> playground.el).querySeletor('item' + i1.id).remove();
+                playground.createItem(findedItemData.id, 1, 1);
             }
             playground.coalescencedItems = [];
             playground.isCoalescenced = false;
