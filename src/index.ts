@@ -316,6 +316,9 @@ let playground = (async () => {
     
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent): void => {
         if(!playground.selectedElement) return;
+        const temp = playground.selectedElement.cloneNode(true);
+        playground.el.appendChild(temp);
+        (<Element> playground.selectedElement).remove();
         playground.selectedElement = null;
         (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
         (<Element> document.querySelector('.unodeZIndexElement'))?.remove();
