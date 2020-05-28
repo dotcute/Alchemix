@@ -22,8 +22,6 @@ let playground = (async () => {
         selectedElement: Node | null;
         getMousePosition: Function;
         offset: Position;
-        transform2pos: Function;
-        pos2transform: Function;
         confins: {
             minX: number;
             maxX: number;
@@ -91,15 +89,16 @@ let playground = (async () => {
         el: <Node> document.querySelector('#playground'),
         events: new Map<playgroundEventType, EventListener>(),
         init: (): void => {
+            playground.el.addEventListener('touchmove', <EventListener> playground.events.get(playgroundEventType.DRAG));
+            playground.el.addEventListener('touchdrag', <EventListener> playground.events.get(playgroundEventType.DRAG));
+            playground.el.addEventListener('touchend', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
+            playground.el.addEventListener('touchleave', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
+            playground.el.addEventListener('touchcancel', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
             playground.el.addEventListener('mousedown', <EventListener> playground.events.get(playgroundEventType.DRAGSTART));
             playground.el.addEventListener('mousemove', <EventListener> playground.events.get(playgroundEventType.DRAG));
             playground.el.addEventListener('mouseup', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
             playground.el.addEventListener('mouseleave', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
             playground.el.addEventListener('touchstart', <EventListener> playground.events.get(playgroundEventType.DRAGSTART));
-            playground.el.addEventListener('touchmove', <EventListener> playground.events.get(playgroundEventType.DRAG));
-            playground.el.addEventListener('touchend', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
-            playground.el.addEventListener('touchleave', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
-            playground.el.addEventListener('touchcancel', <EventListener> playground.events.get(playgroundEventType.DRAGEND));
         },
         addEventListener: (name: playgroundEventType, listener: EventListener): void => {
             playground.events.set(name, listener);
@@ -108,7 +107,7 @@ let playground = (async () => {
         getMousePosition: (e: MouseEvent): Position => {
             const CTM = (playground.el as SVGGraphicsElement).getScreenCTM();
             if(!CTM) throw new TypeError();
-            if((e as any).touches) { e = (e as any).touches[0]; }
+            if((e as any).targetTouches) { e = (e as any).targetTouches[0]; }
             return <Position> {
                 x: (e.clientX - CTM.e) / CTM.a,
                 y: (e.clientY - CTM.f) / CTM.d
@@ -117,15 +116,6 @@ let playground = (async () => {
         offset: {
             x: 0,
             y: 0
-        },
-        transform2pos: (transform: string): Position => {
-            return <Position> {
-                x: parseFloat(transform.replace('translate(','').replace(/\,[0-9\.]+\)/,'')),
-                y: parseFloat(transform.replace(/translate\([0-9\.]+\,/,'').replace(')',''))
-            };
-        },
-        pos2transform: (pos: Position): string => {
-            return `translate(${pos.x},${pos.y})`;
         },
         confins: {
             minX: 0,
@@ -232,16 +222,16 @@ let playground = (async () => {
 
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
 
-    playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent): void => {
+    playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent | TouchEvent): void => {
         if ((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
         if (!target) return;
         if (!target.classList.contains('draggable')) return;
         playground.selectedElement = <Node> target;
-        const temp: Node = playground.selectedElement.cloneNode(true);
-        playground.el.appendChild(temp);
-        (<Element> playground.selectedElement).remove();
-        playground.selectedElement = temp;
+        const unode = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        unode.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${target.id}`);
+        unode.classList.add('unodeZIndexElement');
+        playground.el.appendChild(unode);
         let transforms = (playground.selectedElement as SVGGraphicsElement).transform.baseVal;
         if (transforms.numberOfItems === 0 ||
             transforms.getItem(0).type !== SVGTransform.SVG_TRANSFORM_TRANSLATE) {
@@ -262,9 +252,8 @@ let playground = (async () => {
         };
     });
 
-    playground.addEventListener(playgroundEventType.DRAG, (e: MouseEvent) => {
+    playground.addEventListener(playgroundEventType.DRAG, (e: MouseEvent | TouchEvent) => {
         if(!playground.selectedElement) return;
-        e.preventDefault();
         const coord: Position = playground.getMousePosition(e);
         coord.x -= playground.offset.x;
         coord.y -= playground.offset.y;
@@ -322,14 +311,17 @@ let playground = (async () => {
             (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
         }
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
+        e.preventDefault();
     });
-
+    
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent): void => {
+        if(!playground.selectedElement) return;
+        playground.selectedElement = null;
         (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
-        console.log(playground.isCoalescenced);
+        (<Element> document.querySelector('.unodeZIndexElement'))?.remove();
         if(playground.isCoalescenced) {
-            const i0: Item = <Item> playground.itemData.get(playground.coalescencedItems[0]);
-            const i1: Item = <Item> playground.itemData.get(playground.coalescencedItems[1]);
+            const i0: Item = <Item> playground.itemData.get(playground.coalescencedItems[0]); // coalescence item
+            const i1: Item = <Item> playground.itemData.get(playground.coalescencedItems[1]); // dragging item
             if(!i0 || !i1) throw new Error();
             const i0d: ItemData = <ItemData> playground.assetDatas.baseAsset.datas.find((l: ItemData) => l.id == i0.type);
             const i1d: ItemData = <ItemData> playground.assetDatas.baseAsset.datas.find((l: ItemData) => l.id == i1.type);
@@ -341,19 +333,36 @@ let playground = (async () => {
             });
             if(!findedItemData) {
                 console.log(`Invalid Combination: ${i0d.viewName} + ${i1d.viewName}`); // 없는 조합을 만들었을 경우
+                (async () => {
+                    const i1t: { x: number, y: number } = {
+                        x: parseFloat((<string> (<Element> document.querySelector(`#item_${i1.id}`)).getAttributeNS(null, 'transform')).replace('translate(', '').replace(/ [0-9\.]+\)/, '')),
+                        y: parseFloat((<string> (<Element> document.querySelector(`#item_${i1.id}`)).getAttributeNS(null, 'transform')).replace(/translate\([0-9\.]+ /, '').replace(')', ''))
+                    };
+                    (<Element> document.querySelector(`#item_${i1.id}`)).animate([
+                        { transform: `translate(${i1t.x + 5}px, ${i1t.y}px)` },
+                        { transform: `translate(${i1t.x - 5}px, ${i1t.y}px)` },
+                        { transform: `translate(${i1t.x + 5}px, ${i1t.y}px)` },
+                        { transform: `translate(${i1t.x - 5}px, ${i1t.y}px)` }
+                    ], {
+                        duration: 200,
+                        iterations: 1
+                    });
+                })();
             } else {
                 console.log(`New Item Unlocked: ${i0d.viewName} + ${i1d.viewName} = ${findedItemData.viewName}`); // 새로운 아이템을 만듬
                 // playground.itemData.delete(i0.id);
                 // (<Element> playground.el).querySeletor('item' + i0.id).remove();
                 // playground.itemData.delete(i1.id);
                 // (<Element> playground.el).querySeletor('item' + i1.id).remove();
-                playground.createItemByViewName(findedItemData.viewName, 1, 1);
+                let temp = Math.floor(Math.random() * 2);
+                playground.createItemByViewName(findedItemData.viewName, temp == 0 ? i0.X + 30 : i1.X + 30, temp == 0 ? i0.Y - 30 : i1.Y - 30);
             }
             playground.coalescencedItems = [];
         }
-        playground.selectedElement = null;
     });
     
     playground.init();
+
+    playground.createItemByViewName('fire', 0, 0); // temp
     return playground;
 })();
