@@ -280,12 +280,13 @@ let playground = (async () => {
         let c_: number = 0;
         playground.itemData.forEach((item: Item): void => {
             if(c != 0) return;
+            if(item.id == item_.id || document.querySelector('.itemCoalescenceHighlight')) return;
             if(!(item.X < item_.X + 70 && item.X > item_.X - 70) || !(item.Y < item_.Y + 70 && item.Y > item_.Y - 70)) {
+                playground.coalescencedItems = [];
                 playground.isCoalescenced = false;
                 return;
             }
-            if(item.id == item_.id || document.querySelector('.itemCoalescenceHighlight')) return;
-            c_ = 0;
+            c++;
             playground.isCoalescenced = true;
             const fnode = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
             fnode.setAttributeNS(null, 'class', 'itemCoalescenceHighlight');
@@ -325,6 +326,7 @@ let playground = (async () => {
 
     playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent): void => {
         (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
+        console.log(playground.isCoalescenced);
         if(playground.isCoalescenced) {
             const i0: Item = <Item> playground.itemData.get(playground.coalescencedItems[0]);
             const i1: Item = <Item> playground.itemData.get(playground.coalescencedItems[1]);
@@ -345,10 +347,9 @@ let playground = (async () => {
                 // (<Element> playground.el).querySeletor('item' + i0.id).remove();
                 // playground.itemData.delete(i1.id);
                 // (<Element> playground.el).querySeletor('item' + i1.id).remove();
-                playground.createItem(findedItemData.id, 1, 1);
+                playground.createItemByViewName(findedItemData.viewName, 1, 1);
             }
             playground.coalescencedItems = [];
-            playground.isCoalescenced = false;
         }
         playground.selectedElement = null;
     });
