@@ -41,6 +41,7 @@ let playground = (async () => {
         createItemByViewName: Function;
         isCoalescenced: boolean;
         coalescencedItems: Array<string>;
+        lastCoalescencedElement: any;
     }
     interface ItemData {
         id: string;
@@ -217,7 +218,8 @@ let playground = (async () => {
             }
         },
         isCoalescenced: false,
-        coalescencedItems: []
+        coalescencedItems: [],
+        lastCoalescencedElement: null
     };
 
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
@@ -269,7 +271,9 @@ let playground = (async () => {
         let c_: number = 0;
         playground.itemData.forEach((item: Item): void => {
             if(c != 0) return;
-            if(item.id == item_.id || document.querySelector('.itemCoalescenceHighlight')) return;
+            if(item.id == item_.id) return;
+            console.log(item.id, playground.lastCoalescencedElement);
+            if(document.querySelector('.itemCoalescenceHighlight')) return;
             if(!(item.X < item_.X + 70 && item.X > item_.X - 70) || !(item.Y < item_.Y + 70 && item.Y > item_.Y - 70)) {
                 playground.coalescencedItems = [];
                 playground.isCoalescenced = false;
@@ -295,13 +299,14 @@ let playground = (async () => {
             playground.el.insertBefore(fnode, playground.el.firstChild);
             playground.coalescencedItems.push(item.id);
             playground.coalescencedItems.push(item_.id);
-            document.querySelector('.itemCoalescenceHighlightInnerDiv')?.animate([
+            if(item.id != playground.lastCoalescencedElement) document.querySelector('.itemCoalescenceHighlightInnerDiv')?.animate([
                 { transform: 'scale(0)' }, 
                 { transform: 'scale(1)' }
             ], { 
                 duration: 100,
                 iterations: 1
             });
+            playground.lastCoalescencedElement = item.id;
         });
         playground.itemData.forEach((item: Item) => {
             if(item.id == item_.id) return;
