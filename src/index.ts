@@ -40,6 +40,16 @@ let playground = (async () => {
         itemData: Map<string, Item>;
         progress: any;
         createItem: Function;
+        isCoalescenced: boolean;
+        coalescencedItems: Array<string>;
+    }
+    interface ItemData {
+        id: string;
+        parents?: string[][];
+        isBasic?: boolean;
+        pathType: 'inline' | 'url';
+        path: string;
+        viewName: string;
     }
 
     document.addEventListener('AlchemixDatasetLoaded', () => {
@@ -170,12 +180,14 @@ let playground = (async () => {
                 gnode.appendChild(snode);
                 playground.el.appendChild(gnode);
             }
-        }
+        },
+        isCoalescenced: false,
+        coalescencedItems: []
     };
 
     document.dispatchEvent(new CustomEvent('AlchemixDatasetLoaded'));
 
-    playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent) => {
+    playground.addEventListener(playgroundEventType.DRAGSTART, (e: MouseEvent): void => {
         if ((e.target as Element).tagName.toLowerCase() == 'svg') return;
         const target: Element | null = (e.target as Element).closest('.item');
         if (!target) return;
@@ -220,19 +232,16 @@ let playground = (async () => {
         item_.X = coord.x;
         item_.Y = coord.y;
         let c: number = 0;
-        playground.itemData.forEach((item: Item) => {
+        let c_: number = 0;
+        playground.itemData.forEach((item: Item): void => {
             if(c != 0) return;
-            if(item.id == item_.id) {
-                return;
-            }
             if(!(item.X < item_.X + 70 && item.X > item_.X - 70) || !(item.Y < item_.Y + 70 && item.Y > item_.Y - 70)) {
-                (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
+                playground.isCoalescenced = false;
                 return;
             }
-            if(document.querySelector('.itemCoalescenceHighlight')) {
-                return;
-            }
-            c++;
+            if(item.id == item_.id || document.querySelector('.itemCoalescenceHighlight')) return;
+            c_ = 0;
+            playground.isCoalescenced = true;
             const fnode = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
             fnode.setAttributeNS(null, 'class', 'itemCoalescenceHighlight');
             fnode.setAttributeNS(null, 'width', '120px');
@@ -249,6 +258,8 @@ let playground = (async () => {
             dnode.setAttribute('class', 'itemCoalescenceHighlightInnerDiv');
             fnode.appendChild(dnode);
             playground.el.insertBefore(fnode, playground.el.firstChild);
+            playground.coalescencedItems.push(item.id);
+            playground.coalescencedItems.push(item_.id);
             document.querySelector('.itemCoalescenceHighlightInnerDiv')?.animate([
                 { transform: 'scale(0)' }, 
                 { transform: 'scale(1)' }
@@ -257,11 +268,38 @@ let playground = (async () => {
                 iterations: 1
             });
         });
+        playground.itemData.forEach((item: Item) => {
+            if(item.id == item_.id) return;
+            if(!(item.X < item_.X + 70 && item.X > item_.X - 70) || !(item.Y < item_.Y + 70 && item.Y > item_.Y - 70)) c_++;
+        });
+        if(c_ >= playground.itemData.size - 1) {
+            (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
+        }
         if(playground.transform) playground.transform.setTranslate(coord.x, coord.y);
     });
 
-    playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent) => {
+    playground.addEventListener(playgroundEventType.DRAGEND, (e: MouseEvent): void => {
         (<Element> document.querySelector('.itemCoalescenceHighlight'))?.remove();
+        if(playground.isCoalescenced) {
+            const i0: Item = <Item> playground.itemData.get(playground.coalescencedItems[0]);
+            const i1: Item = <Item> playground.itemData.get(playground.coalescencedItems[1]);
+            if(!i0 || !i1) throw new Error();
+            const i0d: ItemData = <ItemData> playground.assetDatas.baseAsset.datas.find((l: ItemData) => l.id == i0.type);
+            const i1d: ItemData = <ItemData> playground.assetDatas.baseAsset.datas.find((l: ItemData) => l.id == i1.type);
+            if(!i0d || !i1d) throw new Error();
+            const findedItemData: ItemData = playground.assetDatas.baseAsset.datas.find((l: ItemData) => {
+                return l.parents ? l.parents.some((l_: string[]) => {
+                    return (l_[0] == i0d.id && l_[1] == i1d.id) || (l_[1] == i0d.id && l_[0] == i1d.id)
+                }) : false;
+            });
+            if(!findedItemData) {
+                console.log(`Invalid Combination: ${i0d.viewName} + ${i1d.viewName}`); // 없는 조합을 만들었을 경우
+            } else {
+                console.log(`New Item Unlocked: ${findedItemData.viewName}`); // 새로운 아이템을 만듬
+            }
+            playground.coalescencedItems = [];
+            playground.isCoalescenced = false;
+        }
         playground.selectedElement = null;
     });
     
